@@ -1460,6 +1460,56 @@ export const DefaultCommandConverters: CommandTestConverterSet = {
 			}),
 		},
 	},
+	FDLv: {
+		idAliases: {},
+		propertyAliases: {
+			inputLeftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputRightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputLeftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputRightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			compressorGainReduction: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			limiterGainReduction: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			outputLeftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputRightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputLeftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputRightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			leftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			rightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			leftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			rightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+		},
+	},
+	FMLv: {
+		idAliases: {
+			index: 'index',
+			source: 'sourceId',
+		},
+		propertyAliases: {
+			sourceId: (val): PropertyAliasResult => ({ val: BigInt(val), name: 'sourceId' }),
+
+			inputLeftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputRightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputLeftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			inputRightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			expanderGainReduction: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			compressorGainReduction: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			limiterGainReduction: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			outputLeftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputRightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputLeftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			outputRightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+
+			leftLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			rightLevel: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			leftPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+			rightPeak: (val: number): PropertyAliasResult => ({ val: Math.round(val * 100) }),
+		},
+	},
 	CCmd: {
 		idAliases: {
 			source: 'input',
@@ -1503,5 +1553,31 @@ export const DefaultCommandConverters: CommandTestConverterSet = {
 				bigintData: (cmd.longData || []).map((v: string) => BigInt(v)),
 			}
 		},
+	},
+	ARSC: {
+		idAliases: {
+			id: 'id',
+		},
+		propertyAliases: {},
+	},
+	ARSP: {
+		idAliases: {
+			id: 'id',
+		},
+		propertyAliases: {
+			audioInputId: (v: number): PropertyAliasResult => ({ val: v, name: 'audioSourceId' }),
+		},
+	},
+	AROC: {
+		idAliases: {
+			id: 'id',
+		},
+		propertyAliases: {},
+	},
+	AROP: {
+		idAliases: {
+			id: 'id',
+		},
+		propertyAliases: {},
 	},
 }

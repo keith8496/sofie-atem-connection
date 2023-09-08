@@ -36,6 +36,8 @@ import {
 	FairlightAudioLimiterState,
 	FairlightAudioEqualizerBandState,
 	FairlightAudioExpanderState,
+	FairlightAudioRoutingSource,
+	FairlightAudioRoutingOutput,
 } from './state/fairlight'
 import { FairlightDynamicsResetProps } from './commands/Fairlight/common'
 import { MultiViewerPropertiesState } from './state/settings'
@@ -49,6 +51,7 @@ import { FontFace } from '@julusian/freetype2'
 import PLazy = require('p-lazy')
 import { TimeCommand } from './commands'
 import { TimeInfo } from './state/info'
+import { SomeAtemAudioLevels } from './state/levels'
 
 export interface AtemOptions {
 	address?: string
@@ -65,6 +68,7 @@ export type AtemEvents = {
 	connected: []
 	disconnected: []
 	stateChanged: [AtemState, string[]]
+	levelChanged: [SomeAtemAudioLevels]
 	receivedCommands: [IDeserializedCommand[]]
 	updatedTime: [TimeInfo]
 }
@@ -173,7 +177,7 @@ export class BasicAtem extends EventEmitter<AtemEvents> {
 
 	private _mutateState(commands: IDeserializedCommand[]): void {
 		// Is this the start of a new connection?
-		if (commands.find((cmd) => cmd.constructor.name === Commands.VersionCommand.name)) {
+		if (commands.find((cmd) => cmd instanceof Commands.VersionCommand)) {
 			// On start of connection, create a new state object
 			this._state = AtemStateUtil.Create()
 			this._status = AtemConnectionStatus.CONNECTING
@@ -185,6 +189,20 @@ export class BasicAtem extends EventEmitter<AtemEvents> {
 		for (const command of commands) {
 			if (command instanceof TimeCommand) {
 				this.emit('updatedTime', command.properties)
+			} else if (command instanceof Commands.FairlightMixerMasterLevelsUpdateCommand) {
+				this.emit('levelChanged', {
+					system: 'fairlight',
+					type: 'master',
+					levels: command.properties,
+				})
+			} else if (command instanceof Commands.FairlightMixerSourceLevelsUpdateCommand) {
+				this.emit('levelChanged', {
+					system: 'fairlight',
+					type: 'source',
+					source: command.source,
+					index: command.index,
+					levels: command.properties,
+				})
 			} else if (state) {
 				try {
 					const changePaths = command.applyToState(state)
@@ -220,7 +238,7 @@ export class BasicAtem extends EventEmitter<AtemEvents> {
 			}
 		}
 
-		const initComplete = commands.find((cmd) => cmd.constructor.name === Commands.InitCompleteCommand.name)
+		const initComplete = commands.find((cmd) => cmd instanceof Commands.InitCompleteCommand)
 		if (initComplete) {
 			this._status = AtemConnectionStatus.CONNECTED
 			this._onInitComplete()
@@ -726,7 +744,13 @@ export class Atem extends BasicAtem {
 		return this.sendCommand(command)
 	}
 
-	public async uploadStill(index: number, data: Buffer, name: string, description: string): Promise<void> {
+	public async uploadStill(
+		index: number,
+		data: Buffer,
+		name: string,
+		description: string,
+		options?: DT.UploadStillEncodingOptions
+	): Promise<void> {
 		if (!this.state) return Promise.reject()
 		const resolution = Util.getVideoModeInfo(this.state.settings.videoMode)
 		if (!resolution) return Promise.reject()
@@ -734,14 +758,16 @@ export class Atem extends BasicAtem {
 			index,
 			Util.convertRGBAToYUV422(resolution.width, resolution.height, data),
 			name,
-			description
+			description,
+			options
 		)
 	}
 
 	public async uploadClip(
 		index: number,
 		frames: Iterable<Buffer> | AsyncIterable<Buffer>,
-		name: string
+		name: string,
+		options?: DT.UploadStillEncodingOptions
 	): Promise<void> {
 		if (!this.state) return Promise.reject()
 		const resolution = Util.getVideoModeInfo(this.state.settings.videoMode)
@@ -751,7 +777,7 @@ export class Atem extends BasicAtem {
 				yield Util.convertRGBAToYUV422(resolution.width, resolution.height, frame)
 			}
 		}
-		return this.dataTransferManager.uploadClip(index, provideFrame(), name)
+		return this.dataTransferManager.uploadClip(index, provideFrame(), name, options)
 	}
 
 	public async uploadAudio(index: number, data: Buffer, name: string): Promise<void> {
@@ -849,6 +875,16 @@ export class Atem extends BasicAtem {
 		props: Commands.FairlightMixerResetPeakLevelsCommand['properties']
 	): Promise<void> {
 		const command = new Commands.FairlightMixerResetPeakLevelsCommand(props)
+		return this.sendCommand(command)
+	}
+
+	public async startFairlightMixerSendLevels(): Promise<void> {
+		const command = new Commands.FairlightMixerSendLevelsCommand(true)
+		return this.sendCommand(command)
+	}
+
+	public async stopFairlightMixerSendLevels(): Promise<void> {
+		const command = new Commands.FairlightMixerSendLevelsCommand(false)
 		return this.sendCommand(command)
 	}
 
@@ -1041,6 +1077,24 @@ export class Atem extends BasicAtem {
 
 	public async setDisplayClockProperties(props: Partial<Commands.DisplayClockPropertiesExt>): Promise<void> {
 		const command = new Commands.DisplayClockPropertiesSetCommand()
+		command.updateProps(props)
+		return this.sendCommand(command)
+	}
+
+	public async setFairlightAudioRoutingSourceProperties(
+		sourceId: number,
+		props: Partial<OmitReadonly<FairlightAudioRoutingSource>>
+	): Promise<void> {
+		const command = new Commands.AudioRoutingSourceCommand(sourceId)
+		command.updateProps(props)
+		return this.sendCommand(command)
+	}
+
+	public async setFairlightAudioRoutingOutputProperties(
+		sourceId: number,
+		props: Partial<OmitReadonly<FairlightAudioRoutingOutput>>
+	): Promise<void> {
+		const command = new Commands.AudioRoutingOutputCommand(sourceId)
 		command.updateProps(props)
 		return this.sendCommand(command)
 	}
